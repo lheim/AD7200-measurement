@@ -82,8 +82,8 @@ def thread_mcs(sync_event, stop_event, logname):
         '''
 
         # filter output and save in a dict
-        iw_dict[timestamp]['bitrate'] = output[output.find('bitrate'):output.find(' MCS')]
-        iw_dict[timestamp]['MCS'] = output[output.find('MCS'):-1]
+        iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
+        iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
 
 
 
