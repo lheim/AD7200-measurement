@@ -24,10 +24,12 @@ def thread_iperf(sync_event, stop_event, target_ip, interval, length, logname):
     logger.info('Starting Thread 1!')
 
     # call a subprocess for iperf
-    args = ['iperf3', '-c', target_ip, '-i', interval, '-t', length, '-J', '--logfile', '%s_throughput.json' %logname]
+    args = ['iperf3', '-c', target_ip, '-i', interval, '-t', length, '-J', '--logfile', '%s_iperf.json' %logname]
     logger.debug(args)
 
     output = subprocess.Popen(args)
+
+    logger.debug(output)
 
     # set an event every second to notify other threads to save MCS and sweep_dump
     for i in range(0, int(length)):
@@ -37,7 +39,7 @@ def thread_iperf(sync_event, stop_event, target_ip, interval, length, logname):
 
     logger.info('Setting Stop Event!')
     stop_event.set()
-    logger.info('Setting Sync Event one last time!')
+    logger.debug('Setting Sync Event one last time!')
     sync_event.set() # run one last time
 
     logger.info('Finished Thread 1!')
@@ -84,12 +86,14 @@ def thread_mcs(sync_event, stop_event, logname):
 
             output = output.decode()
 
+            logger.debug(output.decode())
+
             # filter output and save in a dict
             iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
             iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
 
-        except IOError:
-
+        except:
+            logger.info('Error while checking MCS.')
             iw_dict[timestamp]['bitrate'] = 'err'
             iw_dict[timestamp]['MCS'] = 'err'
 
@@ -105,7 +109,7 @@ def thread_mcs(sync_event, stop_event, logname):
 
 
     # save dict as a json file
-    iw_file = open("%s_iw-log.json" %logname,"w+")
+    iw_file = open("%s_MCS.json" %logname,"w+")
 
 
     json.dump(iw_dict, iw_file, indent='\t')
@@ -146,9 +150,9 @@ def thread_sweep(sync_event, stop_event, logname):
         if stop_event.is_set():
             break
 
-    logger.info('Writing sweep-dump to .json')
+    logger.debug('Writing sweep-dump to .json')
 
-    sweep_file = open("%s-sweep-dump.json" %logname, "w+")
+    sweep_file = open("%s_sweep-dump.json" %logname, "w+")
     sweep_file.write(sweeps_log) # save the log as raw file. as json processing might take to long, at least for during the measurement.
 
 
