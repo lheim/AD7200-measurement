@@ -67,23 +67,33 @@ def thread_mcs(sync_event, stop_event, logname):
 
         sync_event.wait() # Blocks until the flag becomes true.
 
-        output = subprocess.check_output(['iw', 'dev', 'wlan2', 'link'])
-
-        output = output.decode()
         timestamp = time.time()
 
         iw_dict[timestamp] = {}
         iw_dict[timestamp]['interval'] = i
         i += 1
 
-        '''
-        example output:
-        b'Connected to 04:ce:14:0a:95:ca (on wlan2)\n\tSSID: TALON_AD7200\n\tfreq: 60480\n\tRX: 886905455 bytes (765029 packets)\n\tTX: 490872835 bytes (104713 packets)\n\ttx bitrate: 3080.0 MBit/s MCS 10\n'
-        '''
 
-        # filter output and save in a dict
-        iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
-        iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
+        try:
+            output = subprocess.check_output(['iw', 'dev', 'wlan2', 'link'])
+
+            '''
+            example output:
+            b'Connected to 04:ce:14:0a:95:ca (on wlan2)\n\tSSID: TALON_AD7200\n\tfreq: 60480\n\tRX: 886905455 bytes (765029 packets)\n\tTX: 490872835 bytes (104713 packets)\n\ttx bitrate: 3080.0 MBit/s MCS 10\n'
+            '''
+
+            output = output.decode()
+
+            # filter output and save in a dict
+            iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
+            iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
+
+        except IOError:
+
+            iw_dict[timestamp]['bitrate'] = 'err'
+            iw_dict[timestamp]['MCS'] = 'err'
+
+
 
 
 
