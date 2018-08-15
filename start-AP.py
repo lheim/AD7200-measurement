@@ -86,18 +86,16 @@ def thread_mcs(sync_event, stop_event, logname):
 
             output = output.decode()
 
-            logger.debug(output.decode())
+            logger.debug(output)
 
             # filter output and save in a dict
             iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
             iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
 
-        except:
+        except IOError:
             logger.info('Error while checking MCS.')
             iw_dict[timestamp]['bitrate'] = 'err'
             iw_dict[timestamp]['MCS'] = 'err'
-
-
 
 
 
@@ -109,12 +107,13 @@ def thread_mcs(sync_event, stop_event, logname):
 
 
     # save dict as a json file
-    iw_file = open("%s_MCS.json" %logname,"w+")
+    with open("%s_MCS.json" %logname,"w+") as iw_file:
 
+        json.dump(iw_dict, iw_file, indent='\t')
 
-    json.dump(iw_dict, iw_file, indent='\t')
 
     logger.info('Finished Thread 2!')
+
 
 
 
@@ -131,18 +130,48 @@ def thread_sweep(sync_event, stop_event, logname):
     logger.info('Starting Thread 3!')
     sweeps_log = 'Start sweep_dump log:\n'
 
+    i = 0
+
+    sweep_dict = {}
+    sweep_dict['filname'] = "%s_sweep-dump.json" %logname
+    sweep_dict['start_time'] = time.time()
+    sweep_dict['data'] = []
+
+
     while True:
         sync_event.wait() # Blocks until the flag becomes true.
 
         try:
-            sweep_dump = open("/sys/kernel/debug/ieee80211/phy2/wil6210/sweep_dump_cur","r")
+            with open("/sys/kernel/debug/ieee80211/phy2/wil6210/sweep_dump_cur", "r") as sweep_dump:
 
-            sweeps_log += sweep_dump.read()
+                # sweeps_log += sweep_dump.read()
+
+                first_line = sweep_dump.readline()
+
+                logger.debug('First line %s' %first_line)
+
+                sweep_dict['data'].append({})
+                sweep_dict['data'][-1]['time'] = time.time()
+                sweep_dict['data'][-1]['interval'] = i;
+                sweep_dict['data'][-1]['counter'] = first_line[first_line.find('Counter:')+9:-1]
+                sweep_dict['data'][-1]['dump'] = []
+
+                for line in sweep_dump:
+                    if line.find('['):
+                        logger.debug('Current line %s' %line)
+                        sweep_dict['data'][-1]['dump'].append({})
+                        sweep_dict['data'][-1]['dump'][-1]['sec'] = line[line.find('sec:')+5:line.find('rssi')-1]
+                        sweep_dict['data'][-1]['dump'][-1]['rssi'] = line[line.find('rssi:')+6:line.find('snr')-1]
+                        sweep_dict['data'][-1]['dump'][-1]['snr'] = line[line.find('snr:')+5:line.find('src')-1]
+                        sweep_dict['data'][-1]['dump'][-1]['src'] = line[line.find('src:')+5:line.find(']')-1]
 
 
         except IOError:
             logger.warning("Could not open 'sweep_dump_cur'!")
 
+
+
+        i += 1
 
         if sync_event.is_set():
             sync_event.clear() # Resets the flag.
@@ -152,8 +181,48 @@ def thread_sweep(sync_event, stop_event, logname):
 
     logger.debug('Writing sweep-dump to .json')
 
-    sweep_file = open("%s_sweep-dump.json" %logname, "w+")
-    sweep_file.write(sweeps_log) # save the log as raw file. as json processing might take to long, at least for during the measurement.
+
+    '''
+        {
+        filename:
+        start_time:
+        data:
+          [
+            {
+            time:
+            interval:,
+            counter:,
+            dump:
+            [
+            {
+            sec:
+            ,rssi:
+            ,snr:
+            ,src:
+            },
+            {
+
+            }
+            ]
+            },
+          ....
+          ]
+        }
+    '''
+
+
+    # with open("%s_sweep-dump.txt" %logname, "w+") as sweep_file:
+    #     sweep_file.write(sweeps_log) # save the log as raw file. as json processing might take to long, at least for during the measurement.
+
+    with open("%s_sweep-dump.json" %logname, "w+") as sweep_file:
+        json.dump(sweep_dict, sweep_file, indent='\t')
+
+
+
+
+
+
+
 
 
 
@@ -202,7 +271,7 @@ def main():
     parser.add_argument('--interval', '-i', help='set length of iperf3 intervals', default='1', type=str)
     parser.add_argument('--length', '-t',   help='length of the measurement in seconds', default='120', type=str)
     parser.add_argument('--logname', '-l',  help='name of the logfile', required=True, type=str)
-    parser.add_argument('--verbose', '-v',  help='enable verbose logging')
+    parser.add_argument('--verbose', '-v',  help='enable verbose logging', action='store_true')
 
 
     args = parser.parse_args()
