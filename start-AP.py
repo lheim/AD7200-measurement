@@ -63,6 +63,12 @@ def thread_mcs(sync_event, stop_event, logname):
 
     iw_dict = {} # create dict
 
+
+    iw_dict = {}
+    iw_dict['filname'] = "%s_MCS.json" %logname
+    iw_dict['start_time'] = time.time()
+    iw_dict['data'] = []
+
     i = 0
 
     while True:
@@ -71,8 +77,9 @@ def thread_mcs(sync_event, stop_event, logname):
 
         timestamp = time.time()
 
-        iw_dict[timestamp] = {}
-        iw_dict[timestamp]['interval'] = i
+        iw_dict['data'].append({})
+        iw_dict['data'][-1]['time'] = timestamp
+        iw_dict['data'][-1]['interval'] = i
         i += 1
 
 
@@ -89,13 +96,13 @@ def thread_mcs(sync_event, stop_event, logname):
             logger.debug(output)
 
             # filter output and save in a dict
-            iw_dict[timestamp]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
-            iw_dict[timestamp]['MCS'] = output[output.find('MCS')+4:-1]
+            iw_dict['data'][-1]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
+            iw_dict['data'][-1]['MCS'] = output[output.find('MCS')+4:-1]
 
-        except IOError:
+        except subprocess.CalledProcessError:
             logger.info('Error while checking MCS.')
-            iw_dict[timestamp]['bitrate'] = 'err'
-            iw_dict[timestamp]['MCS'] = 'err'
+            iw_dict['data'][-1]['bitrate'] = 'err'
+            iw_dict['data'][-1]['MCS'] = 'err'
 
 
 
@@ -153,17 +160,17 @@ def thread_sweep(sync_event, stop_event, logname):
                 sweep_dict['data'].append({})
                 sweep_dict['data'][-1]['time'] = time.time()
                 sweep_dict['data'][-1]['interval'] = i;
-                sweep_dict['data'][-1]['counter'] = first_line[first_line.find('Counter:')+9:-1]
+                sweep_dict['data'][-1]['counter'] = first_line[first_line.find('Counter:')+9:-1].strip()
                 sweep_dict['data'][-1]['dump'] = []
 
                 for line in sweep_dump:
-                    if line.find('['):
+                    if line.find('[') is not -1: # skip first and last line
                         logger.debug('Current line %s' %line)
                         sweep_dict['data'][-1]['dump'].append({})
-                        sweep_dict['data'][-1]['dump'][-1]['sec'] = line[line.find('sec:')+5:line.find('rssi')-1]
-                        sweep_dict['data'][-1]['dump'][-1]['rssi'] = line[line.find('rssi:')+6:line.find('snr')-1]
-                        sweep_dict['data'][-1]['dump'][-1]['snr'] = line[line.find('snr:')+5:line.find('src')-1]
-                        sweep_dict['data'][-1]['dump'][-1]['src'] = line[line.find('src:')+5:line.find(']')-1]
+                        sweep_dict['data'][-1]['dump'][-1]['sec'] = line[line.find('sec:')+5:line.find('rssi')-1].strip()
+                        sweep_dict['data'][-1]['dump'][-1]['rssi'] = line[line.find('rssi:')+6:line.find('snr')-1].strip()
+                        sweep_dict['data'][-1]['dump'][-1]['snr'] = line[line.find('snr:')+5:line.find('src')-1].strip()
+                        sweep_dict['data'][-1]['dump'][-1]['src'] = line[line.find('src:')+5:line.find(']')-1].strip()
 
 
         except IOError:
@@ -283,6 +290,9 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, format=formatter)
 
+
+
+    # TODO check if file already exists, abort then
 
 
     sync_event = Event()
