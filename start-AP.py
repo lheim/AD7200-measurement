@@ -6,6 +6,8 @@ import argparse
 import time
 import json
 import logging
+import glob
+
 
 
 
@@ -115,7 +117,6 @@ def thread_mcs(sync_event, stop_event, logname):
 
     # save dict as a json file
     with open("%s_MCS.json" %logname,"w+") as iw_file:
-
         json.dump(iw_dict, iw_file, indent='\t')
 
 
@@ -188,49 +189,8 @@ def thread_sweep(sync_event, stop_event, logname):
 
     logger.debug('Writing sweep-dump to .json')
 
-
-    '''
-        {
-        filename:
-        start_time:
-        data:
-          [
-            {
-            time:
-            interval:,
-            counter:,
-            dump:
-            [
-            {
-            sec:
-            ,rssi:
-            ,snr:
-            ,src:
-            },
-            {
-
-            }
-            ]
-            },
-          ....
-          ]
-        }
-    '''
-
-
-    # with open("%s_sweep-dump.txt" %logname, "w+") as sweep_file:
-    #     sweep_file.write(sweeps_log) # save the log as raw file. as json processing might take to long, at least for during the measurement.
-
     with open("%s_sweep-dump.json" %logname, "w+") as sweep_file:
         json.dump(sweep_dict, sweep_file, indent='\t')
-
-
-
-
-
-
-
-
 
 
     logger.info('Finished Thread 3!')
@@ -292,7 +252,12 @@ def main():
 
 
 
-    # TODO check if file already exists, abort then
+    # check if file already exists
+    if glob.glob('%s*' %args.logname):
+        logger.warning('Group of files starting with "%s" already exist!'%args.logname)
+        return -1
+
+
 
 
     sync_event = Event()
