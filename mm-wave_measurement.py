@@ -31,7 +31,7 @@ def thread_iperf_tx(sync_event, stop_event, target_ip, interval, length, logname
     logger.info("Starting Thread 'iperf tx'!")
 
     # call a subprocess for iperf
-    args = ['iperf3', '-c', target_ip, '-i', interval, '-t', length, '-J', '--logfile', '%s_iperf.json' %logname]
+    args = ['iperf3', '-c', target_ip, '-i', interval, '-t', length, '-J', '--logfile', '%s_TX_iperf.json' %logname]
     if reverse:
         args.append('-R')
     logger.debug(args)
@@ -126,7 +126,7 @@ def thread_mcs(sync_event, stop_event, logname, role):
 
 
     # save dict as a json file
-    with open("%s_MCS.json" %logname,"w+") as iw_file:
+    with open("%s_TX_MCS.json" %logname,"w+") as iw_file:
         json.dump(iw_dict, iw_file, indent='\t')
 
 
@@ -227,7 +227,7 @@ def notify_receiver(time, target_ip, length, logname, reversed):
     notification = {}
     notification['notifier time'] = time
     notification['length'] = length
-    notification['logname'] = logname
+    notification['logname'] = logname + '_RX'
     if reversed: #
         notification['role'] = 'tx'
     else:
@@ -338,11 +338,11 @@ def main():
         threads[-1].start()
 
         # SWEEP
-        threads.append(Thread(target=thread_sweep, args=[sync_event, stop_event, args.logname, args.role]))
+        threads.append(Thread(target=thread_sweep, args=[sync_event, stop_event, args.logname+'_TX', args.role]))
         threads[-1].start()
 
         # IPERF TX
-        threads.append(Thread(target=thread_iperf_tx, args = [sync_event, stop_event, args.target, args.interval, args.length, args.logname, args.reverse]))
+        threads.append(Thread(target=thread_iperf_tx, args=[sync_event, stop_event, args.target, args.interval, args.length, args.logname, args.reverse]))
         threads[-1].start()
 
 
