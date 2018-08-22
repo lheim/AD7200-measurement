@@ -103,7 +103,7 @@ def thread_mcs(sync_event, stop_event, logname, role):
             iw_dict['data'][-1]['MCS'] = output[output.find('MCS')+4:-1]
 
         except subprocess.CalledProcessError:
-            logger.info("Error while checking MCS.")
+            logger.warning("Error while checking MCS.")
             iw_dict['data'][-1]['bitrate'] = 'err'
             iw_dict['data'][-1]['MCS'] = 'err'
 
@@ -252,10 +252,14 @@ def listener_receiver():
 
         logger.info("Received a notifcation: %s" %notification)
 
-        logger.info("Received time %f:" %notification['notifier time'])
-        logger.info("My time %f:" %time.time())
+        # logger.info("Received time %f:" %notification['notifier time'])
+        # logger.info("My time %f:" %time.time())
 
+        time_diff = abs(time.time() - float(notification['notifier time']))
+        logger.info("Time differences %f" %time_diff)
 
+        if time_diff > 1:
+            logger.error('Time differences is more than 1 second! Data might be misaligned.')
 
         # SWEEP thread
         threads.append(Thread(target=thread_sweep, args=[sync_event, stop_event, notification['logname'], notification['role']]))
