@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 
 from threading import Lock, Thread, Event
+from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
 import subprocess
 import argparse
 import time
 import json
 import logging
 import glob
-
 import sys
-from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
-
-
 
 PORT = 5005
 
-
 formatter = "%(asctime)s - %(name)s (%(threadName)-10s) - %(levelname)s - %(message)s"
 logger = logging.getLogger(__name__)
-
 
 '''
 ------------------------------------------
@@ -55,10 +50,6 @@ def thread_iperf_tx(sync_event, stop_event, target_ip, interval, length, logname
 
     logger.info("Finished Thread 'iperf tx'!")
     return 0
-
-
-
-
 
 
 
@@ -132,9 +123,6 @@ def thread_mcs(sync_event, stop_event, logname, role):
 
     logger.info("Finished Thread 'MCS'!")
     return 0
-
-
-
 
 
 
@@ -214,9 +202,8 @@ def thread_sweep(sync_event, stop_event, logname, role):
 
 
 '''
-TODO
 ------------------------------------------
-sync_clients:
+notify_receivers: notify a receiver about a starting measurement. receivers uses listener_receiver().
 '''
 def notify_receiver(time, target_ip, length, logname, reversed):
 
@@ -236,7 +223,10 @@ def notify_receiver(time, target_ip, length, logname, reversed):
     notificationSocket.sendto(json.dumps(notification).encode('utf-8'), (target_ip, PORT))
 
 
-
+'''
+------------------------------------------
+listener_receiver: waiting for notification from transmitter. when notification arrives start logging sweep_dump.
+'''
 def listener_receiver():
 
     threads = []
@@ -297,29 +287,21 @@ def main():
     parser = argparse.ArgumentParser(description="Starting a measurement. Recording everything with iperf3, MCS index, and a sweep dump every second.")
 
 
-    parser.add_argument('--role', '-r',  help="set the role (transmitter or receiver)", choices=['tx', 'rx'], required=True)
-
-
-    parser.add_argument('--target', '-c',   help="IP address of iperf3 server", required=True, type=str)
+    parser.add_argument('--role', '-r',  help="set the role (transmitter or receiver)", choices=['tx', 'rx'], default='tx')
+    parser.add_argument('--target', '-c',   help="IP address of iperf3 server", default='192.168.100.1', type=str)
     parser.add_argument('--interval', '-i', help="set length of iperf3 intervals", default='1', type=str)
     parser.add_argument('--length', '-t',   help="length of the measurement in seconds", default='120', type=str)
     parser.add_argument('--logname', '-l',  help="name of the logfile", required=True, type=str)
     parser.add_argument('--reverse', '-R',  help="reverse the direction of the iperf test (server sends)", action='store_true')
-
-
-
     parser.add_argument('--verbose', '-v',  help="enable verbose logging", action='store_true')
 
-
     args = parser.parse_args()
-
 
     # setting up logger
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format=formatter)
     else:
         logging.basicConfig(level=logging.INFO, format=formatter)
-
 
     # check if file already exists
     if glob.glob('%s*' %args.logname):
@@ -329,10 +311,10 @@ def main():
 
 
     if args.role == 'tx':
-
         threads = []
         sync_event = Event()
         stop_event = Event()
+
         # MCS
         threads.append(Thread(target=thread_mcs, args=[sync_event, stop_event, args.logname, args.role]))
         threads[-1].start()
@@ -345,10 +327,10 @@ def main():
         threads.append(Thread(target=thread_iperf_tx, args=[sync_event, stop_event, args.target, args.interval, args.length, args.logname, args.reverse]))
         threads[-1].start()
 
-
         # join threads
         for thread in threads:
             thread.join()
+
         logger.info("All threads joined. All done.")
 
 
@@ -361,7 +343,6 @@ def main():
         except KeyboardInterrupt:
             logger.info("Keyboard Interrupt: Exiting ...")
             sys.exit()
-        # start scripts with different logname get logname from control signal
 
     else:
         logger.warning("Role not specified.")
