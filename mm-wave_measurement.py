@@ -203,7 +203,7 @@ def thread_sweep(sync_event, stop_event, logname, role):
 
 '''
 ------------------------------------------
-notify_receivers: notify a receiver about a starting measurement. receivers uses listener_receiver().
+notify_receivers: notify a receiver about a incoming measurement. receivers uses listener_receiver().
 '''
 def notify_receiver(time, target_ip, length, logname, reversed):
 
@@ -345,7 +345,7 @@ def main():
         try:
             listener_receiver()
         except KeyboardInterrupt:
-            logger.info("Keyboard Interrupt: Exiting ...")
+            logger.warning("Keyboard Interrupt: Exiting ...")
             sys.exit()
 
     else:
