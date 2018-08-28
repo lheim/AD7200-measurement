@@ -256,7 +256,7 @@ def listener_receiver():
         # logger.info("My time %f:" %time.time())
 
         time_diff = abs(time.time() - float(notification['notifier time']))
-        logger.info("Time differences %f" %time_diff)
+        logger.info("Time difference is: %f seconds" %time_diff)
 
         if time_diff > 1:
             logger.error('Time differences is more than 1 second! Data might be misaligned.')
