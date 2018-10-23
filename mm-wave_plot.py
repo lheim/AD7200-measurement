@@ -4,7 +4,10 @@ import json, sys, glob, numpy
 import matplotlib.pyplot as plt
 
 
-logs_iperf = glob.glob('data/2oct18/*iperf.json')
+logs_iperf = glob.glob('data/23oct18/*iperf.json')
+logs_MCS = glob.glob('data/23oct18/*MCS.json')
+logs_SWEEP = glob.glob('data/23oct18/*sweep-dump.json')
+
 
 for log in logs_iperf:
     json_object = json.load(open(log))
@@ -36,7 +39,6 @@ for log in logs_iperf:
     #plt.close()
 
 
-logs_MCS = glob.glob('data/2oct18/*MCS.json')
 
 for log in logs_MCS:
     json_object = json.load(open(log))
@@ -45,7 +47,10 @@ for log in logs_MCS:
 
 
     for datapoint in json_object['data']:
-        MCS_index = int(datapoint['MCS'])
+        try:
+            MCS_index = int(datapoint['MCS'])
+        except ValueError:
+            MCS_index = 42
         MCS_indexes.append(MCS_index)
         interval = datapoint['interval']
         intervals.append(interval)
@@ -70,7 +75,6 @@ for log in logs_MCS:
     #plt.close()
 
 
-logs_SWEEP = glob.glob('data/2oct18/*sweep-dump.json')
 
 for log in logs_SWEEP:
     json_object = json.load(open(log))
