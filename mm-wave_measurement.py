@@ -187,7 +187,7 @@ def thread_sweep(sync_event, stop_event, logname, role):
         if stop_event.is_set():
             break
 
-    logger.debug("Writing sweep-dump to .json")
+    logger.info("Writing sweep-dump to .json.\n May take some time ...")
 
     with open("%s_sweep-dump.json" %logname, "w+") as sweep_file:
         json.dump(sweep_dict, sweep_file, indent='\t')
