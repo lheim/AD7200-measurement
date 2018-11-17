@@ -4,7 +4,7 @@ import json, sys, glob, os
 import matplotlib.pyplot as plt
 
 dirs = glob.glob('data/*')
-dir = input(f"Please chose a directory from the following list\n{dirs}\n(For example: {dirs[0][5:]}. If empty most recent one is taken.):\ndata/")
+dir = input(f"Please choose a directory from the following list\n{dirs}\n(For example: {dirs[0][5:]}. If empty, most recent one is taken.):\ndata/")
 
 if not dir:
     dir = dirs[-1][5:]
@@ -236,8 +236,9 @@ for index, log in enumerate(logs_SWEEP_TX):
     plt.close()
 
 print("""
-      🌈🌈🌈🌈🌈\n
-      ⭐️ fin ⭐️\n
-      🌈🌈🌈🌈🌈""")
+      🌈🌈🌈🌈🌈
+      ⭐️ fin ⭐️
+      🌈🌈🌈🌈🌈
+      """)
 
 # plot piechart for sectors
