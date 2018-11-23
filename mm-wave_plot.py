@@ -47,11 +47,10 @@ logs_SWEEP_TX.sort()
 logs_SWEEP_RX.sort()
 
 
-fig = [0 for _ in range(len(logs_iperf))]
-ax0 = [0 for _ in range(len(logs_iperf))]
-ax1 = [0 for _ in range(len(logs_iperf))]
-ax2 = [0 for _ in range(len(logs_iperf))]
-
+fig, ax0, ax1, ax2 = [[0 for _ in logs_iperf] for _ in range(4)]
+# interesting: fig = ax0 = ax1 = [0 for _ in logs_iperf] doesnt work.
+# if just an element of the list gets changed, all the others lists inherit this. (fig[0] = 3) -> ax[0] = 3 etc.
+# while when the whole variable is changed, it gets his own memory location
 
 for index, log in enumerate(logs_iperf):
     json_object = json.load(open(log))
@@ -111,13 +110,7 @@ for index, log in enumerate(logs_MCS):
     fig[index].savefig(filename)
 
 
-
-
-fig = [0 for _ in range(len(logs_iperf))]
-ax0 = [0 for _ in range(len(logs_iperf))]
-ax1 = [0 for _ in range(len(logs_iperf))]
-ax2 = [0 for _ in range(len(logs_iperf))]
-ax3 = [0 for _ in range(len(logs_iperf))]
+fig, ax0, ax1, ax2, ax3 = [[0 for _ in logs_iperf] for _ in range(5)]
 
 # sweep log
 for index, log in enumerate(logs_SWEEP_TX):
@@ -206,6 +199,7 @@ for index, log in enumerate(logs_SWEEP_TX):
 
     fig[index].savefig(filename)
 
+    # creating labels for each bar:
     #
     # def autolabel(rects):
     #     for rect in rects:
@@ -241,4 +235,4 @@ print("""
       🌈🌈🌈🌈🌈
       """)
 
-# plot piechart for sectors
+#TODO: plot piechart for sectors
