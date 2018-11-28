@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import json, sys, glob, os
 import matplotlib.pyplot as plt
 
@@ -184,8 +183,7 @@ def sweep_plot(logs_SWEEP):
         #
         # plt.savefig(filename)
 
-if __name__ == "__main__":
-
+def main():
     dirs = glob.glob('data/*')
     dir = input(f"Please choose a directory from the following list\n{dirs}\n(For example: {dirs[0][5:]}. If empty, most recent one is taken.):\ndata/")
 
@@ -221,6 +219,7 @@ if __name__ == "__main__":
         print("Each json has a corresponding partner. ✔")
     else:
         print("Some json's are looking for a partner. :(")
+        sys.exit(-1)
 
 
     # sort them by alphabet, to make the ordering match each other
@@ -242,3 +241,8 @@ if __name__ == "__main__":
           """)
 
     #TODO: plot piechart for sectors
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    main()
