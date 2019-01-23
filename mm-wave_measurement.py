@@ -26,21 +26,23 @@ def thread_iperf_tx(sync_event, stop_event, target_ip, interval, length, logname
     logger.info("Starting Thread 'iperf tx'!")
 
     # call a subprocess for iperf
-    args = ['iperf3', '-c', target_ip, '-i', interval, '-t', length, '-J', '--logfile', '%s_TX_iperf.json' %logname]
+    args = ['iperf', '-c', target_ip, '-i', interval, '-t', length,'-y', 'C']
     if reverse:
         args.append('-R')
     logger.debug(args)
 
-    output = subprocess.Popen(args)
+
+    with open('%s_TX_iperf.csv' %logname, "w+") as iperf_file:
+        output = subprocess.Popen(args, stdout=iperf_file)
 
     logger.debug(output)
 
-    notify_receiver(time.time(), target_ip, length, logname, reverse)
+    notify_receiver(time.time(), target_ip, length, interval, logname, reverse)
 
     # set an event every second to notify other threads to save MCS and sweep_dump
-    for i in range(0, int(length)):
+    for i in range(0, int(float(length)/float(interval))):
         sync_event.set() # notify the other threads
-        time.sleep(1)
+        time.sleep(float(interval))
 
 
     logger.info("Setting Stop Event!")
@@ -205,7 +207,7 @@ def thread_sweep(sync_event, stop_event, logname, role):
 ------------------------------------------
 notify_receivers: notify a receiver about a incoming measurement. receivers uses listener_receiver().
 '''
-def notify_receiver(time, target_ip, length, logname, reversed):
+def notify_receiver(time, target_ip, length, interval, logname, reversed):
 
     notificationSocket = socket(AF_INET, SOCK_DGRAM)
 
@@ -214,6 +216,7 @@ def notify_receiver(time, target_ip, length, logname, reversed):
     notification = {}
     notification['notifier time'] = time
     notification['length'] = length
+    notification['interval'] = interval
     notification['logname'] = logname + '_RX'
     if reversed: #
         notification['role'] = 'tx'
@@ -268,9 +271,9 @@ def listener_receiver():
 
         # set event
         # set an event every second to notify other threads to save MCS and sweep_dump
-        for i in range(0, int(notification['length'])):
+        for i in range(0, int(float(notification['length'])/float(notification['interval']))):
             sync_event.set() # notify the other threads
-            time.sleep(1)
+            time.sleep(float(notification['interval']))
 
         logger.info("Setting Stop Event!")
         stop_event.set()
@@ -292,8 +295,8 @@ def main():
 
 
     parser.add_argument('--role', '-r',  help="set the role (transmitter or receiver)", choices=['tx', 'rx'], default='tx')
-    parser.add_argument('--target', '-c',   help="IP address of iperf3 server", default='192.168.100.1', type=str)
-    parser.add_argument('--interval', '-i', help="set length of iperf3 intervals", default='1', type=str)
+    parser.add_argument('--target', '-c',   help="IP address of iperf server", default='192.168.100.1', type=str)
+    parser.add_argument('--interval', '-i', help="set length of iperf intervals", default='1', type=str)
     parser.add_argument('--length', '-t',   help="length of the measurement in seconds", default='120', type=str)
     parser.add_argument('--logname', '-l',  help="name of the logfile", required=True, type=str)
     parser.add_argument('--reverse', '-R',  help="reverse the direction of the iperf test (server sends)", action='store_true')
@@ -340,7 +343,7 @@ def main():
 
 
     elif args.role == 'rx':
-        logger.info("Please run 'iperf3 -s' on the rx side manually.")
+        logger.info("Please run 'iperf -s' on the rx side manually.")
         logger.info("Starting a listener ...")
         try:
             listener_receiver()
