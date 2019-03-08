@@ -89,11 +89,11 @@ def thread_mcs(sync_event, stop_event, logname, role):
 
 
         try:
-            output = subprocess.check_output(['iw', 'dev', 'wlan2', 'link'])
+            output = subprocess.check_output(['iw', 'dev', 'wlan2', 'station', 'dump'])
 
             '''
             example output:
-            b'Connected to 04:ce:14:0a:95:ca (on wlan2)\n\tSSID: TALON_AD7200\n\tfreq: 60480\n\tRX: 886905455 bytes (765029 packets)\n\tTX: 490872835 bytes (104713 packets)\n\ttx bitrate: 3080.0 MBit/s MCS 10\n'
+            'Station 50:c7:bf:3c:56:00 (on wlan2)\n\trx bytes:\t3536413398\n\trx packets:\t490357954\n\ttx bytes:\t3118460763\n\ttx packets:\t31958129\n\ttx failed:\t0\n\trx drop misc:\t0\n\ttx bitrate:\t2310.0 MBit/s MCS 8\n\trx bitrate:\t385.0 MBit/s MCS 1\n'
             '''
 
             output = output.decode()
@@ -101,8 +101,19 @@ def thread_mcs(sync_event, stop_event, logname, role):
             logger.debug(output)
 
             # filter output and save in a dict
-            iw_dict['data'][-1]['bitrate'] = output[output.find('bitrate')+9:output.find(' MCS')]
-            iw_dict['data'][-1]['MCS'] = output[output.find('MCS')+4:-1]
+            tx_string = output[output.find('tx bitrate')+12:output.find(' MCS')+7]
+            iw_dict['data'][-1]['bitrate'] = tx_string[:tx_string.find(' MCS')]
+            mcs_start = tx_string.find('MCS')
+            mcs_end = tx_string.find('\n')
+            iw_dict['data'][-1]['MCS'] = tx_string[mcs_start+5:mcs_end]
+
+            rx_start = output.find('rx bitrate')
+            rx_string = output[rx_start+12:]
+            iw_dict['data'][-1]['rx_bitrate'] = rx_string[:rx_string.find(' MCS')]
+            mcs_start = rx_string.find('MCS')
+            iw_dict['data'][-1]['rx_MCS'] = rx_string[mcs_start+4:-1]
+
+
 
         except subprocess.CalledProcessError:
             logger.warning("Error while checking MCS.")
@@ -174,7 +185,6 @@ def thread_sweep(sync_event, stop_event, logname, role):
                         sweep_dict['data'][-1]['dump'][-1]['rssi'] = line[line.find('rssi:')+6:line.find('snr')-1].strip()
                         sweep_dict['data'][-1]['dump'][-1]['snr'] = line[line.find('snr:')+5:line.find('src')-1].strip()
                         sweep_dict['data'][-1]['dump'][-1]['src'] = line[line.find('src:')+5:line.find(']')-1].strip()
-
 
         except IOError:
             logger.warning("Could not open 'sweep_dump_cur'!")
