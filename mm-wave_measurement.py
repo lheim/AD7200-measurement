@@ -101,11 +101,10 @@ def thread_mcs(sync_event, stop_event, logname, role):
             logger.debug(output)
 
             # filter output and save in a dict
-            tx_string = output[output.find('tx bitrate')+12:output.find(' MCS')+7]
+            tx_string = output[output.find('tx bitrate')+12:output.find('rx bitrate')-2]
             iw_dict['data'][-1]['bitrate'] = tx_string[:tx_string.find(' MCS')]
             mcs_start = tx_string.find('MCS')
-            mcs_end = tx_string.find('\n')
-            iw_dict['data'][-1]['MCS'] = tx_string[mcs_start+5:mcs_end]
+            iw_dict['data'][-1]['MCS'] = tx_string[mcs_start+4:]
 
             rx_start = output.find('rx bitrate')
             rx_string = output[rx_start+12:]
